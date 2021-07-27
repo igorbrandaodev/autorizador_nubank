@@ -8,34 +8,47 @@ namespace authorize
     class Account
     {
         [JsonProperty("active-card")]
-        public bool active_card { get; set; }
+        public bool active_card { get; }
 
         [JsonProperty("available-limit")]
-        public int available_limit { get; set; }
+        public int available_limit { get; }
 
         [JsonIgnore]
-        public List<Transaction> history { get; set; }
+        public List<Transaction> history { get; }
 
-        public Account(bool active_card, int available_limit)
+        public Account(bool active_card, int available_limit, List<Transaction> history)
         {
             this.active_card = active_card;
             this.available_limit = available_limit;
-            this.history = null;
+            this.history = history;
         }
     }
 
     class Transaction
     {
-        public string merchant { get; set; }
-        public int amount { get; set; }
-        public DateTime time { get; set; }
+        public string merchant { get; }
+        public int amount { get; }
+        public DateTime time { get; }
+
+        public Transaction(string merchant, int amount, DateTime time)
+        {
+            this.merchant = merchant;
+            this.amount = amount;
+            this.time = time;
+        }
     }
 
-    class Json
+    class JsonInOut
     {
         public Account account { get; set; }
         public Transaction transaction { internal get; set; }
         public List<string> violations { get; set; }
+
+        public JsonInOut(Account account, List<string> violations)
+        {
+            this.account = account;
+            this.violations = violations;
+        }
     }
 
     class Program
@@ -43,109 +56,85 @@ namespace authorize
 
         static void Main()
         {
-            // State management
             Account account = null;
-
-
-            // Program
             string line;
+
             while ((line = Console.In.ReadLine()) != null)
             {
-                Json json = JsonConvert.DeserializeObject<Json>(line);
+                JsonInOut json_in = JsonConvert.DeserializeObject<JsonInOut>(line);
 
-                // Decision
                 if (line.Contains("account"))
                 {
+                    List<string> violations = new();
 
-                    // account-already-initialized
                     if (account is null)
                     {
-                        account = create(json.account.active_card, json.account.available_limit);
-                        json.account = account;
-                        json.violations = new List<string>();
-                        Console.WriteLine(JsonConvert.SerializeObject(json));
+                        List<Transaction> new_history = new();
+                        account = CreateAccount(json_in.account.active_card, json_in.account.available_limit, new_history);
                     }
                     else
                     {
-                        json.account = account;
-                        json.violations = new List<string> { "account-already-initialized" };
-                        Console.WriteLine(JsonConvert.SerializeObject(json));
+                        violations.Add("account-already-initialized");
                     }
 
+                    PrintObject(new JsonInOut(account, violations));
                 }
                 else
                 {
-                    Console.WriteLine(JsonConvert.SerializeObject(authorize(json.transaction.merchant, json.transaction.amount, json.transaction.time, account)));
-
+                    JsonInOut json_out = AuthorizeTransaction(json_in.transaction.merchant, json_in.transaction.amount, json_in.transaction.time, account);
+                    account = json_out.account;
+                    PrintObject(json_out);
                 }
-
             }
-
         }
 
-        // Create
-        // in: available-limit, active-card
-        // out: account
-        static Account create(bool active_card, int available_limit)
+        static void PrintObject(object json)
         {
-            return new Account(active_card, available_limit);
+            Console.WriteLine(JsonConvert.SerializeObject(json));
         }
 
-        // Authorizate
-        // in: merchant, amount, time
-        // out: account
-        static Json authorize(string merchant, int amount, DateTime time, Account account)
+        static Account CreateAccount(bool active_card, int available_limit, List<Transaction> history)
+        {
+            return new Account(active_card, available_limit, history);
+        }
+
+        static JsonInOut AuthorizeTransaction(string merchant, int amount, DateTime time, Account account)
         {
             time = DateTime.Now;
+            List<string> violations = new();
+            List<Transaction> transactions = account.history.FindAll(x => x.time >= DateTime.Now.AddMinutes(-2));
 
-            // account-not-initialized
             if (account is null)
             {
-                return new Json { account = account, violations = new List<string> { "account-not-initialized" } };
+                violations.Add("account-not-initialized");
             }
 
-            // card-not-active
             if (!account.active_card)
             {
-                return new Json { account = account, violations = new List<string> { "card-not-active" } };
+                violations.Add("card-not-active");
             }
 
-            // insufficient-limit
             if (account.available_limit < amount)
             {
-                return new Json { account = account, violations = new List<string> { "insufficient-limit" } };
+                violations.Add("insufficient-limit");
             }
 
-
-            if (account.history is not null)
+            if (transactions.Count >= 3)
             {
-                List<Transaction> transactions = account.history.FindAll(x => x.time >= DateTime.Now.AddMinutes(-2));
-
-
-                // highfrequency-small-interval
-                if (transactions.Count() >= 3)
-                {
-                    return new Json { account = account, violations = new List<string> { "highfrequency-small-interval" } };
-                }
-
-                // double-transaction
-                if (transactions.Any(x => x.amount == amount && x.merchant == merchant))
-                {
-                    return new Json { account = account, violations = new List<string> { "double-transaction" } };
-                }
-
-                account.history.Add(new Transaction { merchant = merchant, amount = amount, time = time });
+                violations.Add("highfrequency-small-interval");
             }
-            else
+
+            if (transactions.Any(x => x.amount == amount && x.merchant == merchant))
             {
-                account.history = new List<Transaction> { new Transaction { merchant = merchant, amount = amount, time = time } };
+                violations.Add("double-transaction");
             }
 
+            if (violations.Count == 0)
+                account.history.Add(new Transaction(merchant, amount, time));
 
-            // Processing
-            account.available_limit -= amount;
+            int new_amount = violations.Count == 0 ? (account.available_limit - amount) : account.available_limit;
 
-            return new Json { account = account, violations = new List<string>() };
+            return new JsonInOut(CreateAccount(account.active_card, new_amount, account.history), violations);
 
         }
 
