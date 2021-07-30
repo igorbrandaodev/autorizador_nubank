@@ -8,7 +8,9 @@ Devido a simplicidade, todas as funções e o programa estão em um arquivo só 
 
 ## Frameworks/ Bibliotecas
 Utilizei as seguintes bibliotecas:
- Newtonsoft Json para poder serializar e deserializar a entrada e saída (Json), System para utilizar os tipos de dados primários e também criar coleções tipadas (List) e LINQ para filtrar as coleções de maneira mais simples. 
+- Newtonsoft Json para poder serializar e deserializar a entrada e saída (Json)
+- System para utilizar os tipos de dados primários e também criar coleções tipadas (List)
+- LINQ para filtrar as coleções de maneira mais simples. 
 
 ## Instruções para compilar e executar
 É necessário ter o .NET 5.0 instalado na máquina.
