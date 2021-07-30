@@ -21,7 +21,7 @@ namespace authorizeTest
             bool expected_active_card = true;
             List<Transaction> expected_history = new();
 
-            Account acccount = new Account(true, 120, new List<Transaction>());
+            Account acccount = new(true, 120, new List<Transaction>());
 
             Assert.AreEqual(expected_available_limit, acccount.available_limit);
             Assert.AreEqual(expected_active_card, acccount.active_card);
@@ -34,7 +34,7 @@ namespace authorizeTest
             string expected_merchant = "Burguer King";
             int expected_amount = 5;
 
-            Transaction transaction = new Transaction("Burguer King", 5, DateTime.Now);
+            Transaction transaction = new("Burguer King", 5, DateTime.Now);
 
             Assert.AreEqual(expected_merchant, transaction.merchant);
             Assert.AreEqual(expected_amount, transaction.amount);
@@ -51,7 +51,6 @@ namespace authorizeTest
             string jsonAccountInput = @"{""account"": {""active-card"": true, ""available-limit"": 175}}";
 
             JsonInOut accountJson = JsonConvert.DeserializeObject<JsonInOut>(jsonAccountInput);
-            Account account = accountJson.account;
 
             Assert.NotNull(accountJson);
             Assert.AreEqual(expected_available_limit, accountJson.account.available_limit);

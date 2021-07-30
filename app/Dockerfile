@@ -6,9 +6,9 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
 COPY ["authorize.csproj", "."]
-RUN dotnet restore "authorize.csproj"
+RUN dotnet restore "./authorize.csproj"
 COPY . .
-WORKDIR "/src/"
+WORKDIR "/src/."
 RUN dotnet build "authorize.csproj" -c Release -o /app/build
 
 FROM build AS publish
