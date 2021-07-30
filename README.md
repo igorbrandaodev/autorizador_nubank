@@ -19,6 +19,7 @@ Utilizei as seguintes bibliotecas:
 ```
 dotnet --version
 dotnet build
+dotnet test
 dotnet run < operations
 ```
 
@@ -49,8 +50,4 @@ No arquivo 'operations' já tem massa de testes para todas as operações que o 
 * *{"account": {"active-card": false, "available-limit": 175}}* *
 * *{"transaction": {"merchant": "Burger King", "amount": 20, "time": "2019-02-13T11:00:00.000Z"}}* *
 
-#### Para executar os testes unitários e integrados:
-```
-dotnet test
-```
 
