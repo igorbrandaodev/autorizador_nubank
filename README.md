@@ -32,7 +32,7 @@ dotnet run
 ### Para build com docker:
 
 ```
-docker build -t counter-image -f Dockerfile .
+docker build -t authorize -f Dockerfile .
 docker run -i authorize < operations
 ```
 
