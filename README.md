@@ -13,9 +13,8 @@ Utilizei as seguintes bibliotecas:
 - LINQ para filtrar as coleções de maneira mais simples. 
 
 ## Instruções para compilar e executar
-É necessário ter o .NET 5.0 instalado na máquina.
-Caso não tenha, fazer o download em https://dotnet.microsoft.com/download
-Após fazer a instalação, abra o terminal na pasta 'autorizador_nubank/app' e execute os seguintes comandos:
+- É necessário ter o .NET 5.0 instalado na máquina. Caso não tenha, fazer o download em https://dotnet.microsoft.com/download
+- Após fazer a instalação, abra o terminal na pasta 'autorizador_nubank/app' e execute os seguintes comandos:
 
 ```
 dotnet --version
@@ -23,7 +22,7 @@ dotnet build
 dotnet run < operations
 ```
 
-Obs: Caso não queira passar o arquivo 'operations', é possível informar cada linha individualmente executando apenas:
+Caso não queira passar o arquivo 'operations', é possível informar cada linha individualmente executando apenas:
 
 ```
 dotnet run
