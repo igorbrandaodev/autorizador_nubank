@@ -39,15 +39,23 @@ namespace authorize
                             Console.WriteLine(JsonConvert.SerializeObject(json_out));
                         }
                         break;
+                    // Allow List
+                    case string when line.Contains("allow-list"):
+                        {
+                            account.allow_listed = json_in.allow_list.active;
+                            JsonInOut json_out = new JsonInOut(account, new List<string>());
+                            Console.WriteLine(JsonConvert.SerializeObject(json_out));
+                        }
+                        break;
                 }
             }
         }
 
 
         // Creates a new account
-        public static Account CreateAccount(bool active_card, int available_limit, List<Transaction> history)
+        public static Account CreateAccount(bool active_card, int available_limit, List<Transaction> history, bool allow_list)
         {
-            return new Account(active_card, available_limit, history);
+            return new Account(active_card, available_limit, history, allow_list);
         }
 
 
@@ -58,7 +66,7 @@ namespace authorize
 
             if (account is null)
             {
-                account = CreateAccount(json_in.account.active_card, json_in.account.available_limit, new List<Transaction>());
+                account = CreateAccount(json_in.account.active_card, json_in.account.available_limit, new List<Transaction>(), false);
             }
             else
             {
@@ -81,7 +89,6 @@ namespace authorize
                 return new JsonInOut(null, violations);
             }
 
-            List<Transaction> transactions = account.history.FindAll(x => x.time >= DateTime.Now.AddMinutes(-2));
 
             if (!account.active_card)
             {
@@ -93,14 +100,22 @@ namespace authorize
                 violations.Add("insufficient-limit");
             }
 
-            if (transactions.Count >= 3)
-            {
-                violations.Add("highfrequency-small-interval");
-            }
+            List<Transaction> transactions = account.history.FindAll(x => x.time >= DateTime.Now.AddMinutes(-2));
 
-            if (transactions.Any(x => x.amount == amount && x.merchant == merchant))
+
+            if (!account.allow_listed)
             {
-                violations.Add("double-transaction");
+
+                if (transactions.Count >= 3)
+                {
+                    violations.Add("highfrequency-small-interval");
+                }
+
+                if (transactions.Any(x => x.amount == amount && x.merchant == merchant))
+                {
+                    violations.Add("double-transaction");
+                }
+
             }
 
             if (violations.Count == 0)
@@ -108,7 +123,7 @@ namespace authorize
 
             int new_amount = violations.Count == 0 ? (account.available_limit - amount) : account.available_limit;
 
-            return new JsonInOut(CreateAccount(account.active_card, new_amount, account.history), violations);
+            return new JsonInOut(CreateAccount(account.active_card, new_amount, account.history, account.allow_listed), violations);
 
         }
     }

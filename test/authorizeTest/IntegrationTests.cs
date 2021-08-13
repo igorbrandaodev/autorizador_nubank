@@ -22,7 +22,7 @@ namespace authorizeTest
             bool expected_active_card = true;
             List<Transaction> expected_history = new();
 
-            Account acccount = new(true, 120, new List<Transaction>());
+            Account acccount = new(true, 120, new List<Transaction>(), false);
 
             JsonInOut json_out = new(acccount, new List<string>());
 
@@ -37,9 +37,9 @@ namespace authorizeTest
         [Test]
         public void ShouldCreateAccount()
         {
-            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":175},""violations"":[]}";
+            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":175,""allow_listed"":false},""violations"":[]}";
 
-            Account acccount = Program.CreateAccount(true, 175, new List<Transaction>());
+            Account acccount = Program.CreateAccount(true, 175, new List<Transaction>(), false);
             JsonInOut json_out = new(acccount, new List<string>());
             string output = JsonConvert.SerializeObject(json_out);
 
@@ -49,11 +49,11 @@ namespace authorizeTest
         [Test]
         public void ViolationAccountAlreadyInitialized()
         {
-            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":175},""violations"":[""account-already-initialized""]}";
+            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":175,""allow_listed"":false},""violations"":[""account-already-initialized""]}";
 
             string input = @"{""account"":{""active-card"":true,""available-limit"":175},""violations"":[]}";
             JsonInOut json_in = JsonConvert.DeserializeObject<JsonInOut>(input);
-            Account acccount = new(true, 175, new List<Transaction>());
+            Account acccount = new(true, 175, new List<Transaction>(), false);
             JsonInOut json_out = Program.ValidateAccount(acccount, json_in);
             string output = JsonConvert.SerializeObject(json_out);
 
@@ -64,10 +64,10 @@ namespace authorizeTest
         public void ShouldProcessTransaction()
         {
 
-            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":150},""violations"":[]}";
+            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":150,""allow_listed"":false},""violations"":[]}";
 
             // Create account
-            Account acccount = new(true, 175, new List<Transaction>());
+            Account acccount = new(true, 175, new List<Transaction>(), false);
 
             // Process a transaction
             string merchant = "Uber Eats";
@@ -101,10 +101,10 @@ namespace authorizeTest
         [Test]
         public void ViolationCardNotActive()
         {
-            string expectedOutput = @"{""account"":{""active-card"":false,""available-limit"":100},""violations"":[""card-not-active""]}";
+            string expectedOutput = @"{""account"":{""active-card"":false,""available-limit"":100,""allow_listed"":false},""violations"":[""card-not-active""]}";
 
             // Create account
-            Account acccount = new(false, 100, new List<Transaction>());
+            Account acccount = new(false, 100, new List<Transaction>(), false);
 
             // Process a transaction
             string merchant = "Uber Eats";
@@ -120,10 +120,10 @@ namespace authorizeTest
         [Test]
         public void ViolationInsuficcientLimit()
         {
-            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":200},""violations"":[""insufficient-limit""]}";
+            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":200,""allow_listed"":false},""violations"":[""insufficient-limit""]}";
 
             // Create account
-            Account acccount = new(true, 200, new List<Transaction>());
+            Account acccount = new(true, 200, new List<Transaction>(), false);
 
             // Process a transaction
             string merchant = "Vivara";
@@ -139,10 +139,10 @@ namespace authorizeTest
         [Test]
         public void ViolationHighFrequencySmallInterval()
         {
-            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":115},""violations"":[""highfrequency-small-interval""]}";
+            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":115,""allow_listed"":false},""violations"":[""highfrequency-small-interval""]}";
 
             // Create account
-            Account acccount = new(true, 150, new List<Transaction>());
+            Account acccount = new(true, 150, new List<Transaction>(), false);
 
             // Process 1° transaction
             string merchant = "Burguer King";
@@ -180,10 +180,10 @@ namespace authorizeTest
         [Test]
         public void ViolationDoubleTransaction()
         {
-            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":135},""violations"":[""double-transaction""]}";
+            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":135,""allow_listed"":false},""violations"":[""double-transaction""]}";
 
             // Create account
-            Account acccount = new(true, 150, new List<Transaction>());
+            Account acccount = new(true, 150, new List<Transaction>(), false);
 
             // Process 1° transaction
             string merchant = "Burguer King";
@@ -199,5 +199,29 @@ namespace authorizeTest
 
             Assert.AreEqual(expectedOutput, output);
         }
+
+        [Test]
+        public void ShouldNotViolationDoubleTransaction()
+        {
+            string expectedOutput = @"{""account"":{""active-card"":true,""available-limit"":120,""allow_listed"":true},""violations"":[]}";
+
+            // Create account
+            Account acccount = new(true, 150, new List<Transaction>(), true);
+
+            // Process 1° transaction
+            string merchant = "Burguer King";
+            int amount = 15;
+            DateTime time = DateTime.Now;
+
+            JsonInOut json_out = Program.AuthorizeTransaction(merchant, amount, time, acccount);
+
+            // Process 2° transaction with the same merchant and amount
+            json_out = Program.AuthorizeTransaction(merchant, amount, time, json_out.account);
+
+            string output = JsonConvert.SerializeObject(json_out);
+
+            Assert.AreEqual(expectedOutput, output);
+        }
+
     }
 }

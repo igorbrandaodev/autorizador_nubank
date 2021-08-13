@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace authorize.Models
 {
@@ -6,6 +7,9 @@ namespace authorize.Models
     {
         public Account account { get; set; }
         public Transaction transaction { get; set; }
+
+        [JsonProperty("allow-list")]
+        public AllowList allow_list { get; set; }
         public List<string> violations { get; set; }
 
         public JsonInOut(Account account, List<string> violations)
@@ -15,6 +19,11 @@ namespace authorize.Models
         }
 
         public bool ShouldSerializetransaction()
+        {
+            return false;
+        }
+
+        public bool ShouldSerializeallow_list()
         {
             return false;
         }

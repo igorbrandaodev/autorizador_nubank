@@ -21,11 +21,12 @@ namespace authorizeTest
             bool expected_active_card = true;
             List<Transaction> expected_history = new();
 
-            Account acccount = new(true, 120, new List<Transaction>());
+            Account acccount = new(true, 120, new List<Transaction>(), false);
 
             Assert.AreEqual(expected_available_limit, acccount.available_limit);
             Assert.AreEqual(expected_active_card, acccount.active_card);
             Assert.AreEqual(expected_history, acccount.history);
+            Assert.AreEqual(false, acccount.allow_listed);
         }
 
         [Test]
@@ -77,6 +78,24 @@ namespace authorizeTest
             Assert.IsInstanceOf<DateTime>(transactionJson.transaction.time);
             Assert.Null(transactionJson.account);
             Assert.Null(transactionJson.violations);
+        }
+
+        [Test]
+        public void ShouldDeserializeValidAllowList()
+        {
+
+            AllowList expectedAllowList = new AllowList();
+            expectedAllowList.active = true;
+
+            string input = @"{""allow-list"":{""active"":true}}";
+
+            JsonInOut allowListJson = JsonConvert.DeserializeObject<JsonInOut>(input);
+
+            Assert.NotNull(allowListJson);
+            Assert.AreEqual(true, allowListJson.allow_list.active);
+            Assert.Null(allowListJson.account);
+            Assert.Null(allowListJson.transaction);
+            Assert.Null(allowListJson.violations);
         }
 
     }
